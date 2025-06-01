@@ -15,10 +15,15 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential cmake
-        sudo apt-get install lcov
+        sudo apt-get install -y lcov gcovr
         
-    - name: Configure
-      run: cmake -H. -B_build -DBUILD_TESTS=ON
+    - name: Configure with coverage flags
+      run: |
+        cmake -H. -B_build \
+          -DBUILD_TESTS=ON \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_CXX_FLAGS="--coverage -fprofile-arcs -ftest-coverage" \
+          -DCMAKE_C_FLAGS="--coverage -fprofile-arcs -ftest-coverage"
       
     - name: Build
       run: cmake --build _build
@@ -32,7 +37,7 @@ jobs:
         lcov --capture \
              --directory . \
              --output-file coverage.info \
-             --ignore-errors mismatch,unused \
+             --ignore-errors mismatch,unused,empty \
              --rc branch_coverage=1 \
              --rc geninfo_unexecuted_blocks=1
         
@@ -44,6 +49,7 @@ jobs:
              '*/gmock/*' \
              --output-file filtered.info \
              --ignore-errors unused
+             
         genhtml --branch-coverage \
                 --title "Test Coverage" \
                 --output-directory coverage \
