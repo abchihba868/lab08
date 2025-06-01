@@ -1,8 +1,5 @@
 name: Build and Package
-on:
-  push:
-    tags: ['v*']
-  pull_request: {}
+on: [push, pull_request]
 
 jobs:
   build:
@@ -15,21 +12,18 @@ jobs:
       with:
         submodules: recursive
     
-    - name: Install Linux dependencies
+    - name: Install dependencies
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential cmake dpkg-dev rpm
         
-    - name: Install Windows dependencies
+    - name: Install dependencies (Windows)
       if: matrix.os == 'windows-latest'
-      shell: pwsh
       run: |
-        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
         choco install wixtoolset -y
-        Add-Content $env:GITHUB_ENV "WIX=C:\Program Files (x86)\WiX Toolset v3.11\bin"
-        
-    - name: Prepare license for Windows
+        echo "WIX=C:\Program Files (x86)\WiX Toolset v3.11\bin" >> $GITHUB_ENV
+    - name: Prepare license
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
@@ -37,57 +31,55 @@ jobs:
             " " | Out-File -Encoding ASCII "LICENSE.rtf"
         }
       
-    - name: Install macOS dependencies
+    - name: Install dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: brew install cmake
         
     - name: Configure and Build
-      shell: bash
       run: |
-        cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        cmake -B build -DCMAKE_BUILD_TYPE=Release
         cmake --build build --config Release
         
-    - name: Create Linux Packages
+    - name: Create Packages (Linux)
       if: matrix.os == 'ubuntu-latest'
-      shell: bash
       run: |
         cd build
         cpack -G TGZ
         cpack -G DEB
         cpack -G RPM
         
-    - name: Create Windows Package
+    - name: Create Packages (Windows)
       if: matrix.os == 'windows-latest'
-      shell: bash
       run: |
         cd build
-        cpack -G WIX -C Release
+        cpack -G WIX -C Release -V --debug
         
-    - name: Create macOS Package
+    - name: Create Packages (macOS)
       if: matrix.os == 'macos-latest'
-      shell: bash
       run: |
         cd build
         cpack -G DragNDrop
         
-    - name: Upload Artifacts
+    - name: Upload Windows artifacts
+      if: matrix.os == 'windows-latest'
       uses: actions/upload-artifact@v4
       with:
-        name: Packages-${{ matrix.os }}
+        name: Windows-Packages
+        path: build/*.msi
+
+    - name: Upload Linux artifacts
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: Linux-Packages
         path: |
           build/*.deb
           build/*.rpm
           build/*.tar.gz
-          build/*.msi
-          build/*.dmg
-        
-    - name: Create Release
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
+
+    - name: Upload macOS artifacts
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v4
       with:
-        files: |
-          build/*.deb
-          build/*.rpm
-          build/*.tar.gz
-          build/*.msi
-          build/*.dmg
+        name: macOS-Packages
+        path: build/*.dmg
