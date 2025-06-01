@@ -17,3 +17,13 @@ endif()
 
 target_include_directories(RunTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/banking)
 target_link_libraries(RunTest PRIVATE gtest gtest_main gmock_main banking)
+
+include(InstallRequiredSystemLibraries)
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_PACKAGE_VERSION_MAJOR "1")
+set(CPACK_PACKAGE_VERSION_MINOR "0")
+set(CPACK_PACKAGE_VERSION_PATCH "0")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Banking application")
+set(CPACK_PACKAGE_VENDOR "Pety")
+set(CPACK_PACKAGE_CONTACT "ps.obukhov@gmail.com")
+include(CPack)
