@@ -39,22 +39,46 @@ jobs:
         cmake --build build --config Release
         
 
-    - name: Create Packages
-      shell: bash
+    - name: Create Packages (Linux)
+      if: matrix.os == 'ubuntu-latest'
       run: |
         cd build
-        if [ "$RUNNER_OS" == "Linux" ]; then
-          cpack -G TGZ
-          cpack -G DEB
-          cpack -G RPM
-        elif [ "$RUNNER_OS" == "Windows" ]; then
-          cpack -G WIX -C Release
-        elif [ "$RUNNER_OS" == "macOS" ]; then
-          cpack -G DragNDrop
-        fi
+        cpack -G TGZ
+        cpack -G DEB
+        cpack -G RPM
         
-    - name: Upload Artifacts
+    - name: Create Packages (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        cd build
+        cpack -G WIX -C Release -V --debug
+        
+    - name: Create Packages (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        cd build
+        cpack -G DragNDrop
+        
+    - name: Upload Windows artifacts
+      if: matrix.os == 'windows-latest'
       uses: actions/upload-artifact@v4
       with:
-        name: Packages-${{ matrix.os }}
-        path: build/*
+        name: Windows-Packages
+        path: build/*.msi
+
+    - name: Upload Linux artifacts
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: Linux-Packages
+        path: |
+          build/*.deb
+          build/*.rpm
+          build/*.tar.gz
+
+    - name: Upload macOS artifacts
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: macOS-Packages
+        path: build/*.dmg
