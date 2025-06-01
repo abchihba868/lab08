@@ -23,7 +23,7 @@ jobs:
       run: cmake --build _build
       
     - name: Run tests
-      run: cmake --build _build --target test -- ARGS=--verbose
+      run: cd _build && ./RunTest
       
     - name: Coverage
       run: |
