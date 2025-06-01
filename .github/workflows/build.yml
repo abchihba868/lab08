@@ -25,7 +25,7 @@ jobs:
     - name: Run tests
       run: cd _build && ./RunTest
       
-   - name: Generate coverage data
+    - name: Generate coverage data
       working-directory: _build
       run: |
         lcov --capture \
