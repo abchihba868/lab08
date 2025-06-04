@@ -21,5 +21,4 @@ RUN cd build && \
          --output-file coverage.info && \
     genhtml coverage.info \
             --output-directory coverage_report \
-            
-CMD ["bash"]
+
