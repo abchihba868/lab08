@@ -1,84 +1,32 @@
-name: Build and Package
+name: Docker Build
+
 on: [push, pull_request]
+
 jobs:
-  build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    docker-build:
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
       with:
         submodules: recursive
-    
-    - name: Install CMake (Linux)
-      if: matrix.os == 'ubuntu-latest'
+        
+    - name: Build Docker image
+      run: docker build -t banking-app .
+      
+    - name: Run tests in container
       run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake build-essential dpkg-dev rpm
+        docker run --rm banking-app sh -c "cd /app/build && ./RunTest"
         
-    - name: Install CMake (Windows)
-      if: matrix.os == 'windows-latest'
-      shell: pwsh
+    - name: Extract coverage report
       run: |
-        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
-        choco install wixtoolset -y
+        docker create --name banking-container banking-app
+        docker cp banking-container:/app/build/coverage_report ./docker_coverage
+        docker rm banking-container
         
-    - name: Install CMake (macOS)
-      if: matrix.os == 'macos-latest'
-      run: |
-        brew install cmake
-        
-    - name: Verify CMake version
-      run: cmake --version
-        
-    - name: Configure and Build
-      shell: bash
-      run: |
-        cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-        cmake --build build --config Release
-        
-
-    - name: Create Packages (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        cd build
-        cpack -G TGZ
-        cpack -G DEB
-        cpack -G RPM
-        
-    - name: Create Packages (Windows)
-      if: matrix.os == 'windows-latest'
-      run: |
-        cd build
-        cpack -G NSIS -C Release -V --debug
-        
-    - name: Create Packages (macOS)
-      if: matrix.os == 'macos-latest'
-      run: |
-        cd build
-        cpack -G DragNDrop
-        
-    - name: Upload Windows artifacts
-      if: matrix.os == 'windows-latest'
+    - name: Upload coverage report
       uses: actions/upload-artifact@v4
       with:
-        name: Windows-Packages
-        path: build/*.msi
-
-    - name: Upload Linux artifacts
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
-      with:
-        name: Linux-Packages
-        path: |
-          build/*.deb
-          build/*.rpm
-          build/*.tar.gz
-
-    - name: Upload macOS artifacts
-      if: matrix.os == 'macos-latest'
-      uses: actions/upload-artifact@v4
-      with:
-        name: macOS-Packages
-        path: build/*.dmg
+        name: docker-coverage-report
+        path: ./docker_coverage
+        if-no-files-found: error
