@@ -13,16 +13,13 @@ RUN cd build && \
     lcov --capture \
          --directory . \
          --output-file coverage.info \
-         --rc geninfo_unexecuted_blocks=1 \
-         --ignore-errors mismatch,unused && \
+         --rc geninfo_unexecuted_blocks=1 && \
     lcov --remove coverage.info \
          '/usr/*' \
          '*/googletest/*' \
          '*/test/*' \
-         --output-file coverage.info \
-         --ignore-errors unused && \
+         --output-file coverage.info && \
     genhtml coverage.info \
             --output-directory coverage_report \
-            --ignore-errors unmapped,unused
-
+            
 CMD ["bash"]
