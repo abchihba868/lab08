@@ -3,7 +3,6 @@ RUN apt update
 RUN apt install -yy gcc g++ cmake lcov
 COPY . /app
 WORKDIR /app
-RUN git submodule update --init
 
 RUN mkdir build && cd build && \
     cmake -DCOVERAGE=ON -DCMAKE_BUILD_TYPE=Release .. && \
